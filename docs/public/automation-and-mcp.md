@@ -627,6 +627,37 @@ answers with `message_task_kandev` using the child task ID and
 the correlated answer arrives, so the sidebar shows the normal question
 indicator during the wait.
 
+### Choose a different agent for a subtask
+
+`agent_profile_id` chooses the agent for the created task's first session, but
+only where workflow routing allows it. A workflow step pinned to a fixed agent
+profile still uses that profile. To run those steps with another agent, for
+example a Codex profile under a Claude parent, pass `workflow_agent_overrides`:
+
+```json
+{
+  "title": "Port the parser",
+  "parent_id": "self",
+  "prompt": "Port the parser to the new AST.",
+  "agent_profile_id": "codex-profile-id",
+  "workflow_agent_overrides": [
+    { "source_profile_id": "claude-opus-profile-id", "replacement_profile_id": "codex-profile-id" }
+  ]
+}
+```
+
+Each entry replaces one fixed profile on every step of the task's workflow that
+uses it. The replacement applies only to the created task: its parent, sibling
+tasks, and the shared workflow keep their own profiles, and a subtask never
+inherits its parent's replacements. Each `source_profile_id` may appear once.
+Kandev rejects a malformed or duplicate entry, a source that no step of the
+workflow pins, and a replacement profile that is unavailable, outside the
+workspace, or incompatible with the task's executor. The task is not created
+when any entry is rejected. For a subtask that reuses its parent's workspace,
+compatibility is checked against the parent's executor. Omit the field to keep
+the workflow's fixed profiles. With `start_agent: false`, the replacements are
+stored for the later launch.
+
 ### Create idempotency with `external_id`
 
 A caller that cannot tell whether an earlier `create_task_kandev` call (or `POST /api/v1/tasks`) actually landed (a crash before recording the response or a webhook redelivery) can pass an `external_id` and retry safely instead of guessing. `external_id` is an opaque, caller-chosen string, case-sensitive and byte-exact, unique per workspace: two workspaces can each hold their own task for the same value, but a second create for a value already held in the same workspace never makes a second task there. It is validated and trimmed like other free-text fields; a value that is empty after trimming is treated as if the field were omitted.

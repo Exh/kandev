@@ -37,6 +37,7 @@ import { useAppStore } from "@/components/state-provider";
 import { TaskCreateDialogPopoverContainerProvider } from "@/hooks/use-task-create-dialog-popover-container";
 import { shouldShowTaskTitleField } from "@/components/task-create-dialog-helpers";
 import { useTaskCreateDialogSetup } from "@/components/task-create-dialog-setup";
+import { useEditAgentHandoff } from "@/components/task-edit-agent-handoff";
 
 export type { TaskCreateDialogProps } from "@/components/task-create-dialog-types";
 
@@ -145,6 +146,7 @@ function CreateModeAgentSelectors(props: DialogFormBodyProps) {
       executorProfileName={props.executorProfileName}
       runnerEditable={props.runnerEditable}
       runnerIneligibleReason={props.runnerIneligibleReason}
+      startedAgentSlot={props.startedAgentSlot}
     />
   );
 }
@@ -280,6 +282,7 @@ export function TaskCreateDialog(props: TaskCreateDialogProps) {
   const setup = useTaskCreateDialogSetup(props, { preserveQueuedLastUsedOnClose });
   const { guardedHandleSubmit } = setup;
   const focusReturn = useTaskCreateFocusReturn(props, setup.isCreateMode);
+  const agentHandoff = useEditAgentHandoff(props, setup.isEditMode && setup.isTaskStarted);
   const [popoverContainer, setPopoverContainer] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     if (props.open) {
@@ -307,49 +310,53 @@ export function TaskCreateDialog(props: TaskCreateDialogProps) {
     return true;
   }, [guardedHandleSubmit, nativeSubmitDisabled]);
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent
-        ref={setPopoverContainer}
-        onEscapeKeyDown={(event) => {
-          if (setup.isCreateMode) event.preventDefault();
-        }}
-        {...focusReturn}
-        data-testid="create-task-dialog"
-        data-webkit-safe-motion="true"
-        showCloseButton={false}
-        overlayClassName="create-task-dialog-overlay"
-        className="w-full h-full min-w-0 max-w-full max-h-full overflow-visible rounded-none pt-0 sm:w-[900px] sm:h-auto sm:max-w-none sm:max-h-[85vh] sm:rounded-lg flex flex-col"
-      >
-        <TaskCreateDialogPopoverContainerProvider container={popoverContainer}>
-          <DialogHeader>
-            <DialogHeaderContent
-              isCreateMode={setup.isCreateMode}
-              isEditMode={setup.isEditMode}
-              sessionRepoName={setup.sessionRepoName}
-              initialTitle={props.initialValues?.title}
-            />
-          </DialogHeader>
-          <form
-            onSubmit={guardedHandleSubmit}
-            className="flex min-w-0 flex-col gap-4 overflow-hidden"
-          >
-            <DialogFormBody
-              {...buildDialogFormBodyProps(setup, props)}
-              onComposerSubmit={handleComposerSubmit}
-            />
-            <DialogFooter
-              className="border-t border-border pt-3 flex-col gap-3 sm:flex-row sm:gap-2"
-              data-testid="task-create-dialog-footer"
-            >
-              <TaskCreateDialogFooter
-                {...buildDialogFooterProps(setup, props, pendingAttachmentReason)}
+    <>
+      <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+        <DialogContent
+          ref={setPopoverContainer}
+          onEscapeKeyDown={(event) => {
+            if (setup.isCreateMode) event.preventDefault();
+          }}
+          {...focusReturn}
+          data-testid="create-task-dialog"
+          data-webkit-safe-motion="true"
+          showCloseButton={false}
+          overlayClassName="create-task-dialog-overlay"
+          className="w-full h-full min-w-0 max-w-full max-h-full overflow-visible rounded-none pt-0 sm:w-[900px] sm:h-auto sm:max-w-none sm:max-h-[85vh] sm:rounded-lg flex flex-col"
+        >
+          <TaskCreateDialogPopoverContainerProvider container={popoverContainer}>
+            <DialogHeader>
+              <DialogHeaderContent
+                isCreateMode={setup.isCreateMode}
+                isEditMode={setup.isEditMode}
+                sessionRepoName={setup.sessionRepoName}
+                initialTitle={props.initialValues?.title}
               />
-            </DialogFooter>
-          </form>
-          <PendingDiscardModal pending={setup.submitHandlers.pendingDiscard} />
-        </TaskCreateDialogPopoverContainerProvider>
-      </DialogContent>
-    </Dialog>
+            </DialogHeader>
+            <form
+              onSubmit={guardedHandleSubmit}
+              className="flex min-w-0 flex-col gap-4 overflow-hidden"
+            >
+              <DialogFormBody
+                {...buildDialogFormBodyProps(setup, props)}
+                onComposerSubmit={handleComposerSubmit}
+                startedAgentSlot={agentHandoff.slot}
+              />
+              <DialogFooter
+                className="border-t border-border pt-3 flex-col gap-3 sm:flex-row sm:gap-2"
+                data-testid="task-create-dialog-footer"
+              >
+                <TaskCreateDialogFooter
+                  {...buildDialogFooterProps(setup, props, pendingAttachmentReason)}
+                />
+              </DialogFooter>
+            </form>
+            <PendingDiscardModal pending={setup.submitHandlers.pendingDiscard} />
+          </TaskCreateDialogPopoverContainerProvider>
+        </DialogContent>
+      </Dialog>
+      {agentHandoff.dialog}
+    </>
   );
 }
 

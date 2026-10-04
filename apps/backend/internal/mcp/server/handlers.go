@@ -185,6 +185,10 @@ func (s *Server) createTaskHandler() server.ToolHandlerFunc {
 		workspaceID := req.GetString("workspace_id", "")
 		workflowID := req.GetString("workflow_id", "")
 		workflowStepID := req.GetString("workflow_step_id", "")
+		workflowAgentOverrides, err := workflowAgentOverridesFromArgs(req.GetArguments())
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 
 		// Default start_agent to true if not provided
 		startAgent := true
@@ -213,6 +217,9 @@ func (s *Server) createTaskHandler() server.ToolHandlerFunc {
 		}
 		if externalID := req.GetString("external_id", ""); externalID != "" {
 			payload["external_id"] = externalID
+		}
+		if workflowAgentOverrides != nil {
+			payload[workflowAgentOverridesArg] = workflowAgentOverrides
 		}
 
 		// Dependency edges declared at create time. The handler already read

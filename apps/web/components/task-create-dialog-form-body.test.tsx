@@ -530,3 +530,41 @@ describe("CreateEditSelectors — runner editability (REQ-TASKS-RUNNER-SWITCH-00
     expect(screen.getByTestId(RUNNER_NOTE_TEST_ID).textContent).toBeTruthy();
   });
 });
+
+describe("CreateEditSelectors — started task agent handoff", () => {
+  // @covers AC-TASKS-SUBTASK-AGENT-SELECTION-001.7
+  // @covers AC-TASKS-SUBTASK-AGENT-SELECTION-001.8
+  it("shows the agent handoff slot beside a runner note labelled as the environment", () => {
+    render(
+      <CreateEditSelectors
+        {...createEditSelectorsBaseProps}
+        agentCompatState="compatible"
+        isTaskStarted={true}
+        runnerEditable={false}
+        runnerIneligibleReason="session_exists"
+        startedAgentSlot={<button type="button">Continue with another agent</button>}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Continue with another agent" })).toBeTruthy();
+    expect(screen.queryByTestId(SELECTOR_TEST_ID)).toBeNull();
+    expect(screen.getByTestId("runner-column-label").textContent).toBe(
+      "Runner (executor and environment)",
+    );
+    expect(screen.getByTestId("runner-ineligible-note")).toBeTruthy();
+  });
+
+  it("keeps the create-mode agent selector without a runner label", () => {
+    render(
+      <CreateEditSelectors
+        {...createEditSelectorsBaseProps}
+        agentCompatState="compatible"
+        startedAgentSlot={<button type="button">Continue with another agent</button>}
+      />,
+    );
+
+    expect(screen.getByTestId(SELECTOR_TEST_ID)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Continue with another agent" })).toBeNull();
+    expect(screen.queryByTestId("runner-column-label")).toBeNull();
+  });
+});

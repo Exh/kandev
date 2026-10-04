@@ -10,6 +10,7 @@ import {
   toMessageAttachments,
 } from "@/components/task-create-dialog-helpers";
 import { useToast } from "@/components/toast-provider";
+import { normalizeWorkflowAgentOverrides } from "@/components/task-create-dialog-workflow-agent-overrides";
 import { usePromptResultDelivery } from "@/hooks/use-prompt-result-delivery";
 import { useUtilityAgentGenerator } from "@/hooks/use-utility-agent-generator";
 import type { Repository } from "@/lib/types/http";
@@ -35,6 +36,8 @@ type UseSubtaskSubmitOpts = {
   workspaceMode: SubtaskWorkspaceMode;
   /** Whether the selected executor profile runs directly on the local clone. */
   isLocalExecutor?: boolean;
+  /** A workflow agent choice cannot be validated or is unavailable. */
+  submitBlocked?: boolean;
 };
 
 type CreateSubtaskArgs = {
@@ -56,6 +59,11 @@ type CreateSubtaskArgs = {
   setActiveTask: (taskId: string) => void;
   setActiveSession: (taskId: string, sessionId: string) => void;
 };
+
+function childWorkflowAgentOverrides(overrides: Readonly<Record<string, string>> | undefined) {
+  const normalized = normalizeWorkflowAgentOverrides(overrides ?? {});
+  return Object.keys(normalized).length > 0 ? { workflow_agent_overrides: normalized } : {};
+}
 
 async function createSubtask({
   fs,
@@ -105,6 +113,7 @@ async function createSubtask({
     attachments: toMessageAttachments(attachments),
     workspace_mode: workspaceMode,
     autopilot: autopilot || undefined,
+    ...childWorkflowAgentOverrides(fs.workflowAgentOverrides),
   });
   const newSessionId = response.session_id ?? response.primary_session_id ?? null;
   // Close the dialog before navigation. Navigation can remount the sidebar
@@ -139,6 +148,7 @@ export function useSubtaskSubmit(opts: UseSubtaskSubmitOpts) {
     onClose,
     workspaceMode,
     isLocalExecutor = false,
+    submitBlocked = false,
   } = opts;
   const freshBranchEnabled = fs.freshBranchEnabled;
   const { toast } = useToast();
@@ -156,7 +166,7 @@ export function useSubtaskSubmit(opts: UseSubtaskSubmitOpts) {
       const trimmedTitle = title.trim();
       const prompt = resolvePrompt().trim();
       if ((!autoTitle && !trimmedTitle) || !prompt || !workspaceId || !workflowId) return;
-      if (hasPendingAttachmentUploads(attachments)) return;
+      if (hasPendingAttachmentUploads(attachments) || submitBlocked) return;
 
       isSubmittingRef.current = true;
       setIsCreating(true);
@@ -208,6 +218,7 @@ export function useSubtaskSubmit(opts: UseSubtaskSubmitOpts) {
       workspaceMode,
       isLocalExecutor,
       freshBranchEnabled,
+      submitBlocked,
       setIsCreating,
       onClose,
       toast,

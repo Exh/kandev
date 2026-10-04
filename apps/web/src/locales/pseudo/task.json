@@ -2534,5 +2534,10 @@
   "completionGateNoHistory": "Ńō ćōḿƥĺēţĩōń ćĥàńĝēś ĥàvē ƀēēń ŕēćōŕďēď.",
   "completionGateAction_criteria_set": "Ćŕĩţēŕĩà ćĥàńĝēď",
   "completionGateAction_criterion_verified": "Ēvĩďēńćē ŕēćōŕďēď",
-  "completionGateAction_completion_overridden": "Ćōḿƥĺēţĩōń ōvēŕŕĩďē ũśēď"
+  "completionGateAction_completion_overridden": "Ćōḿƥĺēţĩōń ōvēŕŕĩďē ũśēď",
+  "runnerColumnLabel": "Ŕũńńēŕ (ēxēćũţōŕ àńď ēńvĩŕōńḿēńţ)",
+  "continueWithAnotherAgent": "Ćōńţĩńũē ŵĩţĥ àńōţĥēŕ àĝēńţ",
+  "continueWithAnotherAgentHint": "Śţàŕţś à ńēŵ śēśśĩōń ōń ţĥĩś ţàśķ ŵĩţĥ ţĥē śēĺēćţēď àĝēńţ. Ţĥē ćũŕŕēńţ śēśśĩōń àńď ĩţś ĥĩśţōŕŷ śţàŷ àvàĩĺàƀĺē. Ŵōŕķƒĺōŵ śţēƥś ŵĩţĥ à ƒĩxēď àĝēńţ ķēēƥ ũśĩńĝ ţĥàţ àĝēńţ.",
+  "noSessionToContinue": "Ţĥĩś ţàśķ ĥàś ńō śēśśĩōń ţō ćōńţĩńũē ŷēţ.",
+  "workflowAgentsSubtaskOnly": "Ŕēƥĺàćē ƒĩxēď śţēƥ ƥŕōƒĩĺēś ƒōŕ ţĥĩś śũƀţàśķ ōńĺŷ. Ţĥē ƥàŕēńţ ţàśķ àńď ţĥē ŵōŕķƒĺōŵ ķēēƥ ţĥēĩŕ ōŵń àĝēńţś."
 }

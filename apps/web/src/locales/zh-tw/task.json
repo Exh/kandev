@@ -2534,5 +2534,10 @@
   "completionGateNoHistory": "尚未記錄完成相關更改。",
   "completionGateAction_criteria_set": "條件已更改",
   "completionGateAction_criterion_verified": "已記錄證據",
-  "completionGateAction_completion_overridden": "已使用完成例外"
+  "completionGateAction_completion_overridden": "已使用完成例外",
+  "runnerColumnLabel": "執行環境（執行器與工作環境）",
+  "continueWithAnotherAgent": "使用其他代理繼續",
+  "continueWithAnotherAgentHint": "使用所選代理在此任務上啟動新工作階段。目前工作階段及其歷史記錄仍然可用。使用固定代理的工作流程步驟將繼續使用該代理。",
+  "noSessionToContinue": "此任務還沒有可繼續的工作階段。",
+  "workflowAgentsSubtaskOnly": "僅為此子任務替換固定步驟的設定檔。父任務和工作流程保留各自的代理。"
 }

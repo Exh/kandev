@@ -60,3 +60,17 @@ describe("useSubtaskFormState — remoteRepos seed", () => {
     expect(result.current.freshBranchEnabled).toBe(true);
   });
 });
+
+describe("useSubtaskFormState — workflow agent replacements", () => {
+  // @covers AC-TASKS-SUBTASK-AGENT-SELECTION-001.1
+  it("keeps a per-opening replacement map instead of an inert stub", () => {
+    const { result } = renderHook(() => useSubtaskFormState("ws-1"));
+    expect(result.current.workflowAgentOverrides).toEqual({});
+
+    act(() => {
+      result.current.setWorkflowAgentOverrides({ "claude-opus": "codex" });
+    });
+
+    expect(result.current.workflowAgentOverrides).toEqual({ "claude-opus": "codex" });
+  });
+});

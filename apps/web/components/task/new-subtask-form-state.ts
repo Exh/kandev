@@ -59,6 +59,9 @@ export function useSubtaskFormState(workspaceId: string | null): DialogFormState
   const [freshBranchEnabled, setFreshBranchEnabled] = useState(false);
   const [useRemote, setUseRemote] = useState(false);
   const [githubUrlError, setGitHubUrlError] = useState<string | null>(null);
+  // Child-only fixed-profile replacements for this dialog opening; the
+  // parent's replacements are never copied in.
+  const [workflowAgentOverrides, setWorkflowAgentOverrides] = useState<Record<string, string>>({});
   // Discovered (on-disk) repos — populated by useDiscoverReposEffect when the
   // dialog opens, same as the create-task flow. This lets users target
   // not-yet-imported on-machine git folders for the subtask.
@@ -115,8 +118,8 @@ export function useSubtaskFormState(workspaceId: string | null): DialogFormState
       // Subtasks inherit the parent's workflow; no selector is rendered.
       selectedWorkflowId: null,
       setSelectedWorkflowId: NOOP,
-      workflowAgentOverrides: {},
-      setWorkflowAgentOverrides: NOOP,
+      workflowAgentOverrides,
+      setWorkflowAgentOverrides,
       fetchedSteps: EMPTY_STEPS,
       setFetchedSteps: NOOP,
       isCreatingSession: false,
@@ -155,6 +158,7 @@ export function useSubtaskFormState(workspaceId: string | null): DialogFormState
       freshBranchEnabled,
       useRemote,
       githubUrlError,
+      workflowAgentOverrides,
       discoveredRepositories,
       discoverReposLoading,
       discoverReposLoaded,

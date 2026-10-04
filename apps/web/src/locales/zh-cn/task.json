@@ -2534,5 +2534,10 @@
   "completionGateNoHistory": "尚未记录完成相关更改。",
   "completionGateAction_criteria_set": "条件已更改",
   "completionGateAction_criterion_verified": "已记录证据",
-  "completionGateAction_completion_overridden": "已使用完成例外"
+  "completionGateAction_completion_overridden": "已使用完成例外",
+  "runnerColumnLabel": "运行环境（执行器与工作环境）",
+  "continueWithAnotherAgent": "使用其他代理继续",
+  "continueWithAnotherAgentHint": "使用所选代理在此任务上启动新会话。当前会话及其历史记录仍然可用。使用固定代理的工作流步骤将继续使用该代理。",
+  "noSessionToContinue": "此任务还没有可继续的会话。",
+  "workflowAgentsSubtaskOnly": "仅为此子任务替换固定步骤的配置文件。父任务和工作流保留各自的代理。"
 }

@@ -957,6 +957,7 @@ func (h *Handlers) handleCreateTask(ctx context.Context, msg *ws.Message) (*ws.M
 		WorkspaceID:            req.WorkspaceID,
 		WorkflowID:             req.WorkflowID,
 		WorkflowStepID:         resolvedStepID,
+		WorkflowAgentOverrides: req.WorkflowAgentOverrides,
 		Title:                  req.Title,
 		Description:            req.Description,
 		Autopilot:              req.Autopilot,
@@ -1098,6 +1099,7 @@ func classifyCreateTaskError(err error) string {
 	case errors.Is(err, service.ErrSubtaskDepthExceeded),
 		errors.Is(err, service.ErrInvalidTaskWorkflow),
 		errors.Is(err, service.ErrExternalIDInvalid),
+		errors.Is(err, models.ErrInvalidWorkflowAgentOverrides),
 		// A reference the caller supplied that does not resolve is a
 		// validation failure, not an internal one. Classifying it as
 		// INTERNAL_ERROR discarded err.Error() and left the caller with a

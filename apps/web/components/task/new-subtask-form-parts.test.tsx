@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { UtilityGenerationResult } from "@/hooks/use-utility-agent-generator";
 
@@ -51,6 +51,8 @@ vi.mock("./session-dialog-shared", () => ({
 }));
 
 import { PromptZone, SubtaskFormBody } from "./new-subtask-form-parts";
+import { SubtaskWorkflowAgentsSection } from "./new-subtask-workflow-agents";
+import type { SubtaskWorkflowAgents } from "@/hooks/domains/kanban/use-subtask-workflow-agents";
 
 const GENERATED_RESULT = {
   content: "improved prompt",
@@ -162,5 +164,79 @@ describe("SubtaskFormBody workspace messaging", () => {
 
     expect(screen.queryByText("Same branch as current session")).toBeNull();
     expect(screen.getByTestId("repo-chip-trigger")).toBeTruthy();
+  });
+});
+
+describe("SubtaskWorkflowAgentsSection", () => {
+  afterEach(() => cleanup());
+
+  function workflowAgentsState(
+    overrides: Partial<SubtaskWorkflowAgents> = {},
+  ): SubtaskWorkflowAgents {
+    return {
+      rows: [
+        {
+          sourceProfileId: "claude-opus",
+          sourceLabel: "Claude Opus",
+          sourceAgentName: "claude",
+          stepIds: ["implement", "pr"],
+          stepNames: ["Implement", "PR"],
+          replacementProfileId: "",
+          replacementLabel: null,
+          replacementAvailable: true,
+        },
+      ],
+      options: [],
+      status: "ready",
+      invalid: false,
+      submitBlocked: false,
+      onChange: vi.fn(),
+      onReset: vi.fn(),
+      onRetry: vi.fn(),
+      ...overrides,
+    };
+  }
+
+  // @covers AC-TASKS-SUBTASK-AGENT-SELECTION-001.1
+  it("names each fixed profile, its steps, and the child-only scope", () => {
+    render(<SubtaskWorkflowAgentsSection state={workflowAgentsState()} disabled={false} />);
+
+    const row = screen.getByTestId("task-create-workflow-agent-override-claude-opus");
+    expect(row.textContent).toContain("Claude Opus");
+    expect(row.textContent).toContain("Implement, PR");
+    expect(screen.getByTestId("subtask-workflow-agents").textContent).toContain(
+      "this subtask only",
+    );
+  });
+
+  // @covers AC-TASKS-SUBTASK-AGENT-SELECTION-001.6
+  it("renders nothing for a workflow without fixed profiles", () => {
+    render(
+      <SubtaskWorkflowAgentsSection state={workflowAgentsState({ rows: [] })} disabled={false} />,
+    );
+    expect(screen.queryByTestId("subtask-workflow-agents")).toBeNull();
+  });
+
+  it("shows loading instead of an empty list", () => {
+    render(
+      <SubtaskWorkflowAgentsSection
+        state={workflowAgentsState({ rows: [], status: "loading" })}
+        disabled={false}
+      />,
+    );
+    expect(screen.getByTestId("task-create-workflow-agent-overrides-loading")).toBeTruthy();
+  });
+
+  it("offers retry after a failed load", () => {
+    const onRetry = vi.fn();
+    render(
+      <SubtaskWorkflowAgentsSection
+        state={workflowAgentsState({ rows: [], status: "error", onRetry })}
+        disabled={false}
+      />,
+    );
+    expect(screen.getByTestId("task-create-workflow-agent-overrides-error")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("task-create-workflow-agent-overrides-retry"));
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 });

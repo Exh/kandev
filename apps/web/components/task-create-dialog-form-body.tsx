@@ -67,6 +67,8 @@ type CreateEditSelectorsProps = {
   runnerEditable: boolean;
   /** Presented instead of the selector when runnerEditable is false. */
   runnerIneligibleReason: string;
+  /** Agent area for a started task, which continues through a new session. */
+  startedAgentSlot?: React.ReactNode;
 };
 
 type AgentColumnProps = Pick<
@@ -294,8 +296,18 @@ export const CreateEditSelectors = memo(function CreateEditSelectors(
   // carries only agent and executor profile selectors.
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
-      <div className="min-w-0">{showAgentColumn && <AgentColumn {...props} />}</div>
       <div className="min-w-0">
+        {showAgentColumn ? <AgentColumn {...props} /> : props.startedAgentSlot}
+      </div>
+      <div className="flex min-w-0 flex-col gap-1.5">
+        {props.isTaskStarted && (
+          <span
+            className="text-xs font-medium text-muted-foreground"
+            data-testid="runner-column-label"
+          >
+            {t("task:runnerColumnLabel")}
+          </span>
+        )}
         {runnerEditable ? (
           <ExecutorProfileSelectorComponent
             options={executorProfileOptions}
