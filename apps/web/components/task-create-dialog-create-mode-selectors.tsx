@@ -25,6 +25,7 @@ type CreateModeSelectorsProps = {
   executorProfileName: string | null;
   runnerEditable: boolean;
   runnerIneligibleReason: string;
+  startedAgentSlot?: React.ReactNode;
 };
 
 /**
@@ -53,6 +54,7 @@ export function CreateModeSelectors(props: CreateModeSelectorsProps) {
       executorProfileName={props.executorProfileName}
       runnerEditable={props.runnerEditable}
       runnerIneligibleReason={props.runnerIneligibleReason}
+      startedAgentSlot={props.startedAgentSlot}
       AgentSelectorComponent={AgentSelector}
       ExecutorProfileSelectorComponent={ExecutorProfileSelector}
     />

@@ -454,6 +454,14 @@ func TestClassifyCreateTaskErrorMapsInvalidExternalIDToValidation(t *testing.T) 
 	}
 }
 
+// @covers AC-TASKS-SUBTASK-AGENT-SELECTION-001.3
+func TestClassifyCreateTaskErrorMapsInvalidWorkflowAgentOverridesToValidation(t *testing.T) {
+	err := fmt.Errorf("%w: replacement profile %q is unavailable", models.ErrInvalidWorkflowAgentOverrides, "codex")
+	if got := classifyCreateTaskError(err); got != ws.ErrorCodeValidation {
+		t.Fatalf("expected ErrorCodeValidation, got %q", got)
+	}
+}
+
 func TestHandleCreateTask_RejectsOverlongTitle(t *testing.T) {
 	svc, repo := newTestTaskService(t)
 	ctx := context.Background()

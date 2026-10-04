@@ -225,6 +225,9 @@ func (s *Service) resolveWorkflowAgentOverrideExecutor(
 	req *CreateTaskRequest,
 ) (*models.Executor, *models.ExecutorProfile, error) {
 	executorID, executorProfileID := workflowAgentOverrideExecutorIDs(req)
+	if executorID == "" && executorProfileID == "" && req.ParentID != "" {
+		executorID, executorProfileID = s.inheritedChildExecutorIDs(ctx, req)
+	}
 	if s.executors == nil {
 		return nil, nil, fmt.Errorf("executor repository unavailable")
 	}
@@ -250,6 +253,38 @@ func (s *Service) resolveWorkflowAgentOverrideExecutor(
 		return nil, nil, fmt.Errorf("executor %q is unavailable", executorID)
 	}
 	return executor, executorProfile, nil
+}
+
+// inheritedChildExecutorIDs mirrors the launch-time subtask runner
+// inheritance: the parent's primary session supplies the executor, and a
+// subtask outside the parent's workspace otherwise defaults to a worktree.
+// An inherit_parent child with no parent runner keeps the workspace default.
+func (s *Service) inheritedChildExecutorIDs(ctx context.Context, req *CreateTaskRequest) (string, string) {
+	if s.sessions != nil {
+		sessions, err := s.sessions.ListTaskSessions(ctx, req.ParentID)
+		if err == nil {
+			for _, session := range sessions {
+				if session == nil || !session.IsPrimary {
+					continue
+				}
+				if profileID := strings.TrimSpace(session.ExecutorProfileID); profileID != "" {
+					return "", profileID
+				}
+				if executorID := strings.TrimSpace(session.ExecutorID); executorID != "" {
+					return executorID, ""
+				}
+				break
+			}
+		}
+	}
+	mode := taskWorkspaceMode(req.Metadata)
+	if req.WorkspacePolicy != nil && req.WorkspacePolicy.Mode != "" {
+		mode = req.WorkspacePolicy.Mode
+	}
+	if mode == workspaceModeInheritParent {
+		return "", ""
+	}
+	return models.ExecutorIDWorktree, ""
 }
 
 func (s *Service) resolveWorkflowAgentOverrideExecutorProfile(

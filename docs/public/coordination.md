@@ -103,6 +103,20 @@ beside it for help: the child works independently and asks its parent only when 
 critical decision blocks progress. The top-level task dialog does not show this
 switch; use `create_task_kandev` when you need an autopilot root task.
 
+The agent selector sets the subtask's **initial agent**, which runs wherever the
+workflow does not pin a profile. When the workflow has steps with a fixed agent
+profile, a **Workflow agents** section lists each fixed profile with the steps
+that use it. Choose a replacement there, for example a Codex profile for the
+steps pinned to Claude Opus, to run those steps with another agent. Leave a row
+on **Use workflow profile** to keep the workflow's choice. Replacements apply to
+this subtask only: the parent, its other subtasks, and the workflow keep their
+own profiles, and the dialog never copies the parent's replacements. The section
+shows a loading state while it reads the workflow and a **Retry** action if that
+read fails; your other choices stay in the form. **Create Subtask** stays
+disabled while a chosen replacement is unavailable or cannot be checked. The
+child keeps its replacements after reload and for a later launch, and the
+workflow step preview shows the replacement's model.
+
 The subtask dialog currently does not enforce agent/executor credential compatibility. For an isolated multi-repository subtask, choose **Worktree**, **Local Docker**, **SSH**, or **Sprites**; Local/Local PC creation remains gated and Remote Docker is not implemented. For every subtask, choose an agent profile configured on the inherited or selected executor; otherwise creation can succeed while agent launch or repository materialization fails.
 
 Regular Kanban allows one subtask level: a root task can have children, but a child cannot have another child. Split further work into sibling subtasks, additional sessions, or a separate top-level task. Arbitrary-depth trees belong to the in-progress Office surface.
@@ -112,6 +126,24 @@ Regular Kanban allows one subtask level: a root task can have children, but a ch
 Open the subtask's action menu from its sidebar entry or Kanban card, choose **Detach from parent**, and confirm. The subtask becomes a top-level task without changing its workflow position, blockers, sessions, or descendants. The Office parent picker's **No parent** choice performs the same operation.
 
 Detaching changes task hierarchy only. An inherited workspace remains shared with the former parent, and the confirmation dialog calls this out explicitly. Create a task with **Create new workspace** when the work needs isolated files or a separate branch.
+
+### Continue a started subtask with another agent
+
+Once a subtask has a session, **Edit** no longer lets you change its runner: the
+**Runner (executor and environment)** note explains why. The agent is not locked.
+The **Agent** area shows the current agent and a **Continue with another agent**
+action. Choose a profile there, for example Codex for a subtask that started on
+Claude Opus. The edit dialog closes and the **Hand off** dialog opens for that
+subtask. Write a continuation prompt or pick context, then choose **Start
+Agent**. The new session starts in the same workspace and becomes active; the
+earlier session and its history remain in the session list. A profile that is
+not configured for the subtask's executor is shown as unavailable with that
+reason, and nothing changes until you start a session.
+
+Handoff does not change workflow routing. Steps with a fixed agent profile keep
+using that profile for later automated launches. To run those steps with another
+agent, choose a replacement under **Workflow agents** when you create the
+subtask.
 
 ### Create a subtask from an agent
 
@@ -123,6 +155,7 @@ Call `create_task_kandev` with `parent_id: "self"`. Omit `workspace_mode` to inh
 - Inherited repository attachments deliberately do not copy an explicit checkout branch.
 - An explicit same-repository child uses the inherited base branch. An explicit cross-repository child defaults to that repository's default branch unless `base_branch` is supplied.
 - Every created task must resolve an agent profile, even with `start_agent: false`.
+- `workflow_agent_overrides` replaces fixed workflow step profiles for the created task only, for example `[{"source_profile_id": "<claude-profile>", "replacement_profile_id": "<codex-profile>"}]`. The parent's replacements are not inherited, and invalid entries fail before the task is created. See [Choose a different agent for a subtask](automation-and-mcp.md#choose-a-different-agent-for-a-subtask).
 - Profile precedence when the task lands on a workflow step is the destination step's launch profile first (the step's pinned profile, or the workflow default when the step is unpinned), because that is what the orchestrator launches; it overrides an explicit `agent_profile_id`, and the created task records it. With no explicit `workflow_step_id`, the destination is the first **Auto-start agent** step for `start_agent: true` and the workflow's start step otherwise, so a workflow with steps still applies that step's launch profile. Off a workflow step (no workflow, or a workflow with no steps), the order is explicit profile, then parent/current/source task metadata or primary-session profile, then the workspace default.
 - If no executor or executor profile is explicit or inherited, task MCP uses the built-in **git-worktree** executor. It does not consult the workspace's **Default Executor** for this fallback.
 - The one-level Kanban depth rule still applies.

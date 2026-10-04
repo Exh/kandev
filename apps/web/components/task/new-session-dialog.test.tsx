@@ -46,6 +46,7 @@ const mockState = {
   },
   tasks: {
     activeSessionId: "session-1",
+    activeTaskId: "task-1",
   },
   setActiveSession: mockSetActiveSession,
   applyAgentProfileRecentUse: mockApplyAgentProfileRecentUse,
@@ -628,5 +629,44 @@ describe("NewSessionDialog", () => {
         expect.objectContaining({ profileExplicit: false }),
       ),
     );
+  });
+
+  it("hands off from the source session's runner when another task is active", async () => {
+    const tasks = mockState.tasks as { activeSessionId: string; activeTaskId?: string };
+    const sessions = mockState.taskSessions.items as Record<string, Record<string, string>>;
+    tasks.activeTaskId = "task-other";
+    sessions["child-session"] = {
+      id: "child-session",
+      task_id: "task-1",
+      agent_profile_id: "profile-1",
+      executor_id: "executor-child",
+    };
+    try {
+      render(
+        <NewSessionDialog
+          open={true}
+          onOpenChange={vi.fn()}
+          taskId="task-1"
+          handoff={{ sourceSessionId: "child-session", targetProfileId: "profile-1" }}
+        />,
+      );
+      fireEvent.change(screen.getByTestId(DESCRIPTION_INPUT_TEST_ID), {
+        target: { value: TYPED_HANDOFF_PROMPT },
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "Start Agent" }));
+
+      await waitFor(() => expect(mockLaunchSession).toHaveBeenCalledTimes(1));
+      expect(mockBuildStartRequest).toHaveBeenCalledWith(
+        "task-1",
+        "profile-1",
+        expect.objectContaining({ executorId: "executor-child" }),
+      );
+      await waitFor(() => expect(mockSetActiveSession).toHaveBeenCalledWith("task-1", "session-2"));
+      expect(window.location.pathname).toContain("task-1");
+    } finally {
+      tasks.activeTaskId = "task-1";
+      delete sessions["child-session"];
+    }
   });
 });

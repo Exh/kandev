@@ -159,3 +159,115 @@ func TestCreateTaskRejectsIncompatibleWorkflowOverrideBeforePersistence(t *testi
 		t.Fatalf("persisted %d task rows after compatibility rejection, want none", len(tasks))
 	}
 }
+
+type recordingWorkflowAgentExecutorValidator struct {
+	executorIDs []string
+}
+
+func (v *recordingWorkflowAgentExecutorValidator) ValidateAgentProfileForExecutor(
+	_ context.Context,
+	_ *settingsmodels.AgentProfile,
+	executor *models.Executor,
+	_ *models.ExecutorProfile,
+) error {
+	v.executorIDs = append(v.executorIDs, executor.ID)
+	return nil
+}
+
+type childOverrideFixture struct {
+	svc       *Service
+	validator *recordingWorkflowAgentExecutorValidator
+	parentID  string
+}
+
+func newChildOverrideFixture(t *testing.T) (childOverrideFixture, func(*CreateTaskRequest) (*models.Task, error)) {
+	t.Helper()
+	svc, _, repo := createTestService(t)
+	ctx := context.Background()
+	const workspaceID, workflowID = "workspace-child-override", "workflow-child-override"
+	defaultExecutorID := "executor-workspace-default"
+	if err := repo.CreateWorkspace(ctx, &models.Workspace{
+		ID: workspaceID, Name: "Child override workspace", DefaultExecutorID: &defaultExecutorID,
+	}); err != nil {
+		t.Fatalf("CreateWorkspace: %v", err)
+	}
+	for _, id := range []string{defaultExecutorID, "executor-parent"} {
+		if err := repo.CreateExecutor(ctx, &models.Executor{
+			ID: id, Name: id, Type: models.ExecutorTypeSSH, Status: models.ExecutorStatusActive,
+		}); err != nil {
+			t.Fatalf("CreateExecutor %s: %v", id, err)
+		}
+	}
+	if err := repo.CreateWorkflow(ctx, &models.Workflow{ID: workflowID, WorkspaceID: workspaceID, Name: "Child override workflow"}); err != nil {
+		t.Fatalf("CreateWorkflow: %v", err)
+	}
+	if err := repo.CreateTask(ctx, &models.Task{
+		ID: "parent-task", WorkspaceID: workspaceID, WorkflowID: workflowID, Title: "Claude parent", Priority: "medium",
+	}); err != nil {
+		t.Fatalf("CreateTask parent: %v", err)
+	}
+	if err := repo.CreateTaskSession(ctx, &models.TaskSession{
+		ID: "parent-session", TaskID: "parent-task", State: models.TaskSessionStateRunning,
+		AgentProfileID: "claude-opus", ExecutorID: "executor-parent", IsPrimary: true,
+	}); err != nil {
+		t.Fatalf("CreateTaskSession: %v", err)
+	}
+	svc.SetWorkflowStepGetter(&fakeWorkflowStepGetter{steps: map[string]*wfmodels.WorkflowStep{
+		"implement": {ID: "implement", WorkflowID: workflowID, AgentProfileID: "claude-opus"},
+	}})
+	svc.agentProfiles = workflowAgentOverrideProfilesStub{profiles: map[string]*settingsmodels.AgentProfile{
+		"codex": {ID: "codex", Enabled: true, WorkspaceID: workspaceID},
+	}}
+	svc.SetWorkspacePolicyAttacher(noOpWorkspacePolicyAttacher{})
+	validator := &recordingWorkflowAgentExecutorValidator{}
+	svc.agentProfileExecutorValidator = validator
+	create := func(req *CreateTaskRequest) (*models.Task, error) {
+		req.WorkspaceID, req.WorkflowID, req.ParentID = workspaceID, workflowID, "parent-task"
+		if req.Title == "" {
+			req.Title = "Codex child"
+		}
+		req.WorkflowAgentOverrides = map[string]string{"claude-opus": "codex"}
+		result, err := svc.CreateTask(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return result.Task, nil
+	}
+	return childOverrideFixture{svc: svc, validator: validator, parentID: "parent-task"}, create
+}
+
+func TestCreateChildTaskValidatesWorkflowOverrideAgainstInheritedParentExecutor(t *testing.T) {
+	fixture, create := newChildOverrideFixture(t)
+	if _, err := create(&CreateTaskRequest{WorkspacePolicy: &WorkspacePolicy{Mode: workspaceModeInheritParent}}); err != nil {
+		t.Fatalf("CreateTask child: %v", err)
+	}
+	if len(fixture.validator.executorIDs) != 1 || fixture.validator.executorIDs[0] != "executor-parent" {
+		t.Fatalf("validated executors = %v, want the parent's executor", fixture.validator.executorIDs)
+	}
+}
+
+func TestCreateChildTaskPersistsWorkflowOverrideWithoutChangingParent(t *testing.T) {
+	fixture, create := newChildOverrideFixture(t)
+	ctx := context.Background()
+	child, err := create(&CreateTaskRequest{
+		WorkspacePolicy: &WorkspacePolicy{Mode: workspaceModeInheritParent},
+		DeferredLaunch:  map[string]interface{}{"intent": "start", "agent_profile_id": "claude-opus"},
+	})
+	if err != nil {
+		t.Fatalf("CreateTask child: %v", err)
+	}
+	reloaded, err := fixture.svc.tasks.GetTask(ctx, child.ID)
+	if err != nil {
+		t.Fatalf("GetTask child: %v", err)
+	}
+	if got, ok := reloaded.WorkflowAgentOverrides.ReplacementFor(reloaded.WorkflowID, "implement"); !ok || got != "codex" {
+		t.Fatalf("reloaded child replacement = %q, %v; want codex", got, ok)
+	}
+	parent, err := fixture.svc.tasks.GetTask(ctx, fixture.parentID)
+	if err != nil {
+		t.Fatalf("GetTask parent: %v", err)
+	}
+	if parent.WorkflowAgentOverrides != nil && len(parent.WorkflowAgentOverrides.Steps) > 0 {
+		t.Fatalf("parent overrides = %+v, want none", parent.WorkflowAgentOverrides)
+	}
+}

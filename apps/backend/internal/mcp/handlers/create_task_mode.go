@@ -27,6 +27,7 @@ type mcpCreateTaskRequest struct {
 	Description            string               `json:"description"`
 	Autopilot              bool                 `json:"autopilot"`
 	AgentProfileID         string               `json:"agent_profile_id"`
+	WorkflowAgentOverrides map[string]string    `json:"workflow_agent_overrides"`
 	ExecutorProfileID      string               `json:"executor_profile_id"`
 	StartAgent             *bool                `json:"start_agent"`
 	Repositories           []mcpRepositoryInput `json:"repositories"`

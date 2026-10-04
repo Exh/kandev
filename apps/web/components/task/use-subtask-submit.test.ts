@@ -400,4 +400,49 @@ describe("useSubtaskSubmit", () => {
     expect(opts.onClose).not.toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ variant: "error" }));
   });
+
+  // @covers AC-TASKS-SUBTASK-AGENT-SELECTION-001.2
+  it("sends only the child's explicit workflow agent replacements", async () => {
+    const opts = makeSubmitOptions({
+      fs: {
+        ...makeSubmitOptions().fs,
+        agentProfileId: "claude-opus",
+        workflowAgentOverrides: { "claude-opus": "codex", "claude-sonnet": "claude-sonnet" },
+      } as unknown as Parameters<typeof useSubtaskSubmit>[0]["fs"],
+    });
+    const { result } = renderHook(() => useSubtaskSubmit(opts));
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() } as never);
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agent_profile_id: "claude-opus",
+        workflow_agent_overrides: { "claude-opus": "codex" },
+      }),
+    );
+  });
+
+  it("omits workflow agent replacements when none were chosen", async () => {
+    const opts = makeSubmitOptions();
+    const { result } = renderHook(() => useSubtaskSubmit(opts));
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() } as never);
+    });
+
+    expect(mockCreateTask.mock.calls[0][0]).not.toHaveProperty("workflow_agent_overrides");
+  });
+
+  it("does not submit while a workflow agent choice is blocked", async () => {
+    const opts = makeSubmitOptions({ submitBlocked: true });
+    const { result } = renderHook(() => useSubtaskSubmit(opts));
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() } as never);
+    });
+
+    expect(mockCreateTask).not.toHaveBeenCalled();
+  });
 });

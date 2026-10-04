@@ -302,6 +302,10 @@ type SubtaskFormBodyProps = {
   hasPrompt: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
+  /** Child-only replacements for the workflow's fixed agent profiles. */
+  workflowAgents?: React.ReactNode;
+  /** A workflow agent choice cannot be validated or is unavailable. */
+  submitBlocked?: boolean;
 };
 
 type WorkspaceModeToggleProps = {
@@ -434,6 +438,8 @@ export function SubtaskFormBody({
   hasPrompt,
   onClose,
   onSubmit,
+  workflowAgents,
+  submitBlocked = false,
 }: SubtaskFormBodyProps) {
   const { t } = useTranslation();
   const { inputRef, clampChange } = useTaskTitleSelectionRestore(title);
@@ -486,6 +492,7 @@ export function SubtaskFormBody({
         disabled={isCreating}
         hideExecutor={inheritParent}
       />
+      {workflowAgents}
       <div
         className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2"
         data-testid="subtask-context-autopilot-row"
@@ -516,7 +523,13 @@ export function SubtaskFormBody({
         </Button>
         <Button
           type="submit"
-          disabled={isCreating || isSummarizing || !hasPrompt || (!autoTitle && !title.trim())}
+          disabled={
+            isCreating ||
+            isSummarizing ||
+            submitBlocked ||
+            !hasPrompt ||
+            (!autoTitle && !title.trim())
+          }
           className="cursor-pointer"
         >
           {isCreating ? t("task:creatingEllipsis") : t("task:createSubtask")}

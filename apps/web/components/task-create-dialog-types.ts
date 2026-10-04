@@ -738,4 +738,6 @@ export type DialogFormBodyProps = {
   runnerEditable: boolean;
   /** From computeRunnerIneligibleReason: presented when runnerEditable is false. */
   runnerIneligibleReason: string;
+  /** Edit mode, started task: the continue-with-another-agent action. */
+  startedAgentSlot?: React.ReactNode;
 };

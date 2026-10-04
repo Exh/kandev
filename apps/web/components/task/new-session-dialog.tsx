@@ -8,6 +8,7 @@ import { useAppStore } from "@/components/state-provider";
 import { useToast } from "@/components/toast-provider";
 import { useDockviewStore } from "@/lib/state/dockview-store";
 import { addSessionPanel } from "@/lib/state/dockview-panel-actions";
+import { replaceTaskUrl } from "@/lib/links";
 
 import { AgentSelector, TaskFormInputs } from "@/components/task-create-dialog-selectors";
 import type { TaskFormInputsHandle } from "@/components/task-create-dialog-types";
@@ -47,7 +48,7 @@ function agentProfileDisplayLabel(profile: AgentProfileOption): string {
   return parts.length > 1 ? parts.slice(1).join(" \u2022 ") : (parts[0] ?? profile.label);
 }
 
-function useNewSessionDialogState(taskId: string) {
+function useNewSessionDialogState(taskId: string, sourceSessionId?: string) {
   const { t } = useTranslation();
   const resolvedWorkspaceId = useAppStore((state) =>
     resolveComposerWorkspaceId({
@@ -65,7 +66,13 @@ function useNewSessionDialogState(taskId: string) {
     return task?.title ?? t("common:task");
   });
   const agentProfiles = useAppStore((state) => state.agentProfiles.items);
-  const activeSessionId = useAppStore((state) => state.tasks.activeSessionId);
+  // A handoff names its source session; the globally active session may
+  // belong to another task when the handoff starts outside the task page.
+  const activeSessionId = useAppStore((state) =>
+    sourceSessionId && state.taskSessions.items[sourceSessionId]
+      ? sourceSessionId
+      : state.tasks.activeSessionId,
+  );
   const currentSession = useAppStore((state) => {
     return activeSessionId ? (state.taskSessions.items[activeSessionId] ?? null) : null;
   });
@@ -119,6 +126,19 @@ function activateNewSession(
   setActiveSession(taskId, sessionId);
   const { api, centerGroupId } = useDockviewStore.getState();
   if (api) addSessionPanel(api, groupId ?? centerGroupId, sessionId, tabLabel);
+}
+
+// Another task is open (for example, a handoff started from Edit Task on the
+// board or sidebar): select the task and let its page mount the session panel.
+function activateSessionOnTaskPage(
+  sessionId: string,
+  taskId: string,
+  _tabLabel: string,
+  _groupId: string | undefined,
+  setActiveSession: (taskId: string, sessionId: string) => void,
+) {
+  setActiveSession(taskId, sessionId);
+  replaceTaskUrl(taskId, sessionId);
 }
 
 function useSessionOptions(taskId: string) {
@@ -357,6 +377,7 @@ function NewSessionForm({
   const handoffInitial = handoff ? buildHandoffInitialState(handoff) : null;
   const { toast } = useToast();
   const setActiveSession = useAppStore((state) => state.setActiveSession);
+  const taskIsActive = useAppStore((state) => state.tasks.activeTaskId === taskId);
   const { summarize, isSummarizing } = useSummarizeSession();
   const [contextValue, setContextValue] = useState(handoffInitial?.contextValue ?? "blank");
   const [hasPrompt, setHasPrompt] = useState(false);
@@ -397,7 +418,7 @@ function NewSessionForm({
     onClose,
     toast,
     setActiveSession,
-    activateSession: activateNewSession,
+    activateSession: taskIsActive ? activateNewSession : activateSessionOnTaskPage,
     setIsCreating,
   });
   const isSubmitDisabled =
@@ -540,7 +561,7 @@ export function NewSessionDialog({
     initialPrompt,
     executorLabel,
     sessionProfileId,
-  } = useNewSessionDialogState(taskId);
+  } = useNewSessionDialogState(taskId, handoff?.sourceSessionId);
   const executorProfile = useTaskExecutorProfile(taskId, open);
   const handoffLabel = handoffProfileLabel(agentProfiles, handoff);
   const formKey = handoff

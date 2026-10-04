@@ -28,6 +28,8 @@ import {
   useSubtaskFormState,
 } from "./new-subtask-form-state";
 import { PromptZone, SubtaskFormBody } from "./new-subtask-form-parts";
+import { SubtaskWorkflowAgentsSection } from "./new-subtask-workflow-agents";
+import { useSubtaskWorkflowAgents } from "@/hooks/domains/kanban/use-subtask-workflow-agents";
 import { applySummarizeSessionResult, type SummaryToastFn } from "./session-context-summary";
 import { useSubtaskPromptZone, useSubtaskSubmit } from "./use-subtask-submit";
 import type { KanbanState } from "@/lib/state/slices/kanban/types";
@@ -387,6 +389,14 @@ function NewSubtaskForm({
   useGitHubUrlErrorEffect(fs, isOpen);
   useDiscoverReposEffect(fs, isOpen, workspaceId, false, toast);
   const profileOptions = useAgentProfileOptions(agentProfiles, "task_create");
+  const workflowAgents = useSubtaskWorkflowAgents({
+    workflowId,
+    open: isOpen,
+    profiles: agentProfiles,
+    options: profileOptions,
+    overrides: fs.workflowAgentOverrides,
+    setOverrides: fs.setWorkflowAgentOverrides,
+  });
   const sessionOptions = useSessionOptions(parentTaskId);
   const allExecutorProfiles = useExecutorProfiles(executors);
   const executorProfileOptions = useExecutorProfileOptions(allExecutorProfiles);
@@ -437,6 +447,7 @@ function NewSubtaskForm({
     autoTitle,
     autopilot: fs.autopilot,
     isLocalExecutor,
+    submitBlocked: workflowAgents.submitBlocked,
     setIsCreating,
     onClose,
     workspaceMode,
@@ -484,6 +495,8 @@ function NewSubtaskForm({
     hasPrompt,
     onClose,
     onSubmit: handleSubmit,
+    workflowAgents: <SubtaskWorkflowAgentsSection state={workflowAgents} disabled={isCreating} />,
+    submitBlocked: workflowAgents.submitBlocked,
   });
 }
 

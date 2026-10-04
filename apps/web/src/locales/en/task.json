@@ -2534,5 +2534,10 @@
   "completionGateNoHistory": "No completion changes have been recorded.",
   "completionGateAction_criteria_set": "Criteria changed",
   "completionGateAction_criterion_verified": "Evidence recorded",
-  "completionGateAction_completion_overridden": "Completion override used"
+  "completionGateAction_completion_overridden": "Completion override used",
+  "runnerColumnLabel": "Runner (executor and environment)",
+  "continueWithAnotherAgent": "Continue with another agent",
+  "continueWithAnotherAgentHint": "Starts a new session on this task with the selected agent. The current session and its history stay available. Workflow steps with a fixed agent keep using that agent.",
+  "noSessionToContinue": "This task has no session to continue yet.",
+  "workflowAgentsSubtaskOnly": "Replace fixed step profiles for this subtask only. The parent task and the workflow keep their own agents."
 }

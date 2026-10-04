@@ -2534,5 +2534,10 @@
   "completionGateNoHistory": "Não foram registadas alterações de conclusão.",
   "completionGateAction_criteria_set": "Critérios alterados",
   "completionGateAction_criterion_verified": "Prova registada",
-  "completionGateAction_completion_overridden": "Exceção de conclusão utilizada"
+  "completionGateAction_completion_overridden": "Exceção de conclusão utilizada",
+  "runnerColumnLabel": "Runner (executor e ambiente)",
+  "continueWithAnotherAgent": "Continuar com outro agente",
+  "continueWithAnotherAgentHint": "Inicia uma nova sessão nesta tarefa com o agente selecionado. A sessão atual e o respetivo histórico continuam disponíveis. Os passos do fluxo de trabalho com um agente fixo continuam a usar esse agente.",
+  "noSessionToContinue": "Esta tarefa ainda não tem nenhuma sessão para continuar.",
+  "workflowAgentsSubtaskOnly": "Substitua os perfis das etapas fixas apenas para esta subtarefa. A tarefa principal e o fluxo de trabalho mantêm os seus próprios agentes."
 }

@@ -82,16 +82,19 @@ export function useHasSelectableAgentProfiles(): boolean {
   );
 }
 
-function HandoffProfileList({
+export function HandoffProfileList({
   profiles,
   hasSelectableProfiles,
   onSelectProfile,
   Item,
+  showDisabledReason = false,
 }: {
   profiles: HandoffProfile[];
   hasSelectableProfiles: boolean;
   onSelectProfile: (profileId: string) => void;
   Item: typeof ContextMenuItem | typeof DropdownMenuItem;
+  /** Render the incompatibility reason as text so touch users can read it. */
+  showDisabledReason?: boolean;
 }) {
   const { t } = useTranslation();
   if (profiles.length === 0) {
@@ -113,11 +116,18 @@ function HandoffProfileList({
       data-testid={`handoff-profile-${profile.id}`}
       onSelect={() => onSelectProfile(profile.id)}
     >
-      <span className="inline-flex items-center gap-1.5">
-        {profile.agentName && (
-          <AgentLogo agentName={profile.agentName} size={14} className="shrink-0" />
+      <span className="inline-flex flex-col gap-0.5">
+        <span className="inline-flex items-center gap-1.5">
+          {profile.agentName && (
+            <AgentLogo agentName={profile.agentName} size={14} className="shrink-0" />
+          )}
+          {profile.label}
+        </span>
+        {showDisabledReason && profile.disabled && (
+          <span className="text-[11px] text-muted-foreground">
+            {t("task:notConfiguredForThisExecutor")}
+          </span>
         )}
-        {profile.label}
       </span>
     </Item>
   ));

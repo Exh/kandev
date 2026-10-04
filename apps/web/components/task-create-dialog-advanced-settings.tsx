@@ -117,6 +117,8 @@ type WorkflowAgentOverridesSectionProps = {
   onChange: (sourceProfileId: string, replacementProfileId: string) => void;
   onReset: () => void;
   onRetry: () => void;
+  /** Scope note under the heading; defaults to the task-only note. */
+  description?: string;
 };
 
 function TaskCreateWorkflowAgentOverridesBody({
@@ -168,7 +170,7 @@ function TaskCreateWorkflowAgentOverridesBody({
   );
 }
 
-function TaskCreateWorkflowAgentOverridesSection({
+export function TaskCreateWorkflowAgentOverridesSection({
   rows,
   options,
   loading,
@@ -178,6 +180,7 @@ function TaskCreateWorkflowAgentOverridesSection({
   onChange,
   onReset,
   onRetry,
+  description,
 }: WorkflowAgentOverridesSectionProps) {
   const { t } = useTranslation();
   return (
@@ -190,7 +193,7 @@ function TaskCreateWorkflowAgentOverridesSection({
         <div className="min-w-0">
           <h3 className="text-xs font-medium text-foreground">{t("task:workflowAgents")}</h3>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {t("task:workflowAgentsTaskOnly")}
+            {description ?? t("task:workflowAgentsTaskOnly")}
           </p>
         </div>
         <Button
